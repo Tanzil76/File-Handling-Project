@@ -1,6 +1,16 @@
+"""
+📁 File Manager Studio
+A polished Streamlit UI wrapping simple file CRUD operations
+(create, read, update, delete) built on top of pathlib.
+
+Run with:  streamlit run file_manager_app.py
+"""
+
 import streamlit as st
 from pathlib import Path
 from datetime import datetime
+import re
+import uuid
 
 # ----------------------------------------------------------------------
 # PAGE CONFIG + THEME
@@ -69,9 +79,33 @@ CUSTOM_CSS = """
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# Working directory for all file operations (keeps the demo self-contained)
-WORKDIR = Path("file_manager_workspace")
-WORKDIR.mkdir(exist_ok=True)
+# ----------------------------------------------------------------------
+# DEMO SAFETY GUARDRAILS
+# ----------------------------------------------------------------------
+MAX_CONTENT_CHARS = 5000       # cap how much text a single write can contain
+MAX_FILES_PER_SESSION = 20     # cap how many files one visitor can create
+
+# Give every visitor their own private sandbox folder instead of one shared
+# folder, so nobody can read, overwrite, or delete another visitor's files.
+if "session_id" not in st.session_state:
+    st.session_state.session_id = uuid.uuid4().hex[:12]
+
+BASE_DIR = Path("file_manager_workspace")
+WORKDIR = BASE_DIR / st.session_state.session_id
+WORKDIR.mkdir(parents=True, exist_ok=True)
+
+
+def safe_filename(name: str) -> str | None:
+    """Reject empty names, path separators, and '..' traversal attempts."""
+    name = name.strip()
+    if not name:
+        return None
+    if "/" in name or "\\" in name or ".." in name:
+        return None
+    # allow letters, numbers, spaces, dots, dashes, underscores only
+    if not re.fullmatch(r"[\w\-. ]+", name):
+        return None
+    return name
 
 # ----------------------------------------------------------------------
 # HERO HEADER
@@ -84,6 +118,11 @@ st.markdown(
     </div>
     """,
     unsafe_allow_html=True,
+)
+
+st.caption(
+    "🔒 Demo mode: your files live in a private, temporary sandbox tied to this "
+    "session — not visible to other visitors, and not meant for permanent storage."
 )
 
 # ----------------------------------------------------------------------
@@ -105,6 +144,7 @@ st.sidebar.metric("Files in workspace", len(files))
 # HELPERS
 # ----------------------------------------------------------------------
 def resolve(name: str) -> Path:
+    """Only ever call this with a name that has passed safe_filename()."""
     return WORKDIR / name
 
 # ----------------------------------------------------------------------
@@ -115,17 +155,23 @@ if menu == "🆕 Create":
     with st.container():
         st.markdown('<div class="card">', unsafe_allow_html=True)
         name = st.text_input("File name", placeholder="notes.txt")
-        content = st.text_area("Content", placeholder="Write something...", height=160)
+        content = st.text_area(
+            "Content", placeholder="Write something...", height=160,
+            max_chars=MAX_CONTENT_CHARS,
+        )
         if st.button("Create File", use_container_width=True):
-            if not name.strip():
-                st.error("Please enter a file name.")
+            safe_name = safe_filename(name)
+            if not safe_name:
+                st.error("Please enter a valid file name (no slashes or '..').")
+            elif len(files) >= MAX_FILES_PER_SESSION:
+                st.error(f"⚠️ Demo limit reached ({MAX_FILES_PER_SESSION} files). Delete one first.")
             else:
-                path = resolve(name)
+                path = resolve(safe_name)
                 if path.exists():
-                    st.error(f"⚠️ '{name}' already exists.")
+                    st.error(f"⚠️ '{safe_name}' already exists.")
                 else:
                     path.write_text(content)
-                    st.success(f"✅ '{name}' created successfully!")
+                    st.success(f"✅ '{safe_name}' created successfully!")
                     st.balloons()
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -163,18 +209,22 @@ elif menu == "✏️ Update":
     if operation == "Rename":
         new_name = st.text_input("New file name", placeholder="renamed.txt")
         if st.button("Rename", use_container_width=True):
-            path = resolve(name)
-            new_path = resolve(new_name)
+            safe_new = safe_filename(new_name)
+            path = resolve(name) if name else None
             if not name or not path.exists():
                 st.error("❌ No such file exists.")
-            elif new_path.exists():
-                st.error(f"⚠️ '{new_name}' already exists.")
+            elif not safe_new:
+                st.error("Please enter a valid new file name (no slashes or '..').")
             else:
-                path.rename(new_path)
-                st.success(f"✅ Renamed to '{new_name}'")
+                new_path = resolve(safe_new)
+                if new_path.exists():
+                    st.error(f"⚠️ '{safe_new}' already exists.")
+                else:
+                    path.rename(new_path)
+                    st.success(f"✅ Renamed to '{safe_new}'")
 
     elif operation == "Append content":
-        data = st.text_area("Content to append", height=120)
+        data = st.text_area("Content to append", height=120, max_chars=MAX_CONTENT_CHARS)
         if st.button("Append", use_container_width=True):
             path = resolve(name)
             if not name or not path.exists():
@@ -185,7 +235,7 @@ elif menu == "✏️ Update":
                 st.success(f"✅ Appended to '{name}'")
 
     else:  # Overwrite content
-        data = st.text_area("New content", height=120)
+        data = st.text_area("New content", height=120, max_chars=MAX_CONTENT_CHARS)
         if st.button("Overwrite", use_container_width=True):
             path = resolve(name)
             if not name or not path.exists():
