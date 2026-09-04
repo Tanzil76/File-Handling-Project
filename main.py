@@ -30,7 +30,7 @@ print("press 2 for reading a file")
 print("press 3 for updating a file")
 print("press 4 for deleting a file")
 
-a = int(input("\ntell your response :- "))
+a = int(input("\ntell your response :- "))    # \n-: line ended
 
 
 if a == 1:
