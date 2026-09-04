@@ -1,2 +1,3 @@
 Python is beginner friendly language 
- is used in machine learning algorithms
+ is used in machine learning algorithms 
+It is most used language in industry nowadays.

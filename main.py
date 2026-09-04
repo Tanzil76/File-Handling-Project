@@ -51,14 +51,14 @@ def updatefile():
                     print("File already exists")
             elif choice == 2:
                 with open(path,'a') as fs:
-                    data = input("What do you want to append")
+                    data = input("What do you want to append ")
                     fs.write(" \n"+data)
                 print("Successfully appended")
 
             
             elif choice == 3:
                 with open(path,'w') as fs:
-                    data = input("What do you want to overwrite")
+                    data = input("What do you want to overwrite ")
                     fs.write(" \n"+data)
                 print("Successfully overwritten")
     except Exception as err:
