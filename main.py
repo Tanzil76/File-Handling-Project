@@ -7,7 +7,7 @@ def createfile():
         # check file  path is exist or not.
         path = Path(name)
         if not path.exists():
-            with open(path,"w") as fs:
+            with open(path,'w') as fs:
                 data = input("What you want to write -: ")
                 fs.write(data)
             print("File created successfully")
@@ -21,7 +21,7 @@ def readfile():
         name = input("Tell your file name -: ")
         path = Path(name)
         if path.exists():
-            with open(path,"r") as fs:
+            with open(path,'r') as fs:
                 content = fs.read()
                 print(f"Your file content is \n {content}")
         else:
@@ -30,7 +30,40 @@ def readfile():
         print(f"An error occured as {err}")
         
 def updatefile():
-    pass
+    try:
+        name = input("Give file name -: ")
+        path = Path(name)
+        if path.exists():
+            print("Opearations")
+            print("1. Renaming the file")
+            print("2. Appending the content")
+            print("3. Overwriting the file")
+
+            choice = int(input("Enter option -: "))
+
+            if choice == 1:
+                newname  = input("Tell new file name -: ")
+                new_path = Path(newname)
+                if not new_path.exists():
+                    path.rename(new_path)
+                    print("Renamed successfully")
+                else:
+                    print("File already exists")
+            elif choice == 2:
+                with open(path,'a') as fs:
+                    data = input("What do you want to append")
+                    fs.write(" \n"+data)
+                print("Successfully appended")
+
+            
+            elif choice == 3:
+                with open(path,'w') as fs:
+                    data = input("What do you want to overwrite")
+                    fs.write(" \n"+data)
+                print("Successfully overwritten")
+    except Exception as err:
+        print(f"An error occured as {err}")
+
 
 def deletefile():
     pass

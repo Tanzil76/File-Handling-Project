@@ -1,1 +1,2 @@
-Python is beginner friendly language
+Python is beginner friendly language 
+ is used in machine learning algorithms
