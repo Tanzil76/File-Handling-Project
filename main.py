@@ -1,9 +1,10 @@
-from pathlib import Path
+from pathlib import Path                # librabry use for making path.
 import os
 
 def createfile():
     try:
         name = input("Give your file name -: ")
+        # check file  path is exist or not.
         path = Path(name)
         if not path.exists():
             with open(path,"w") as fs:
@@ -16,8 +17,18 @@ def createfile():
         print(f"An error occured as {err}")
     
 def readfile():
-    pass
-
+    try:
+        name = input("Tell your file name -: ")
+        path = Path(name)
+        if path.exists():
+            with open(path,"r") as fs:
+                content = fs.read()
+                print(f"Your file content is \n {content}")
+        else:
+            print("Error no such file exists")
+    except Exception as err:
+        print(f"An error occured as {err}")
+        
 def updatefile():
     pass
 
