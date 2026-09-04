@@ -66,7 +66,16 @@ def updatefile():
 
 
 def deletefile():
-    pass
+    try:
+        name = input("Tell your file name -: ")
+        path = Path(name)
+        if path.exists():
+            path.unlink()
+            print("File deleted successfully")
+        else:
+            print("Error no such file exists")
+    except Exception as err:
+        print("An error occured as {err}")
 
 
 print("press 1 for creating a file")
